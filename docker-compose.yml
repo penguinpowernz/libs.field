@@ -1,0 +1,61 @@
+version: "3"
+
+services:
+  parser:
+    image: debian:latest
+    volumes:
+      - ./bin/parser:/bin/parser
+    command: /bin/parser
+    depends_on:
+      - nats
+      - redis
+
+  api:
+    image: debian:latest
+    volumes:
+      - ./bin/api:/bin/api
+    command: /bin/api
+    ports:
+      - "4080:80"
+    depends_on:
+      - redis
+
+  scraper:
+    image: debian:latest
+    volumes:
+      - ./bin/scraper:/bin/scraper
+    command: /bin/scraper
+    depends_on:
+      - nats
+
+  # maintainer:
+  #   image: debian:latest
+  #   volumes:
+  #     - ./bin/maintainer:/bin/maintainer
+  #   command: bin/maintainer
+  #   depends_on:
+  #     - nats
+  #     - redis
+
+  taxonomizer:
+    image: debian:latest
+    volumes:
+      - ./bin/taxonomizer:/bin/taxonomizer
+    command: /bin/taxonomizer
+    depends_on:
+      - nats
+      - redis
+
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+    expose:
+      - 4222
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379
+    expose:
+      - 6379
