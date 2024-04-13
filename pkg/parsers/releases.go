@@ -67,7 +67,7 @@ func (rp releaseParser) parse(data []byte) {
 
 	lib := &models.Lib{}
 	if err := rp.find(id, lib); err != nil {
-		log.Printf("[parsers.releases] Error finding lib: %s", err)
+		log.Printf("[parsers.releases] Error finding lib %s: %s", id, err)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (rp releaseParser) parse(data []byte) {
 
 	lib.ReleasesCheckedAt = time.Now()
 	if err := rp.saveFields([]string{"ReleasesCheckedAt"}, lib); err != nil {
-		log.Printf("[parsers.releases] Error updating release check time: %s", err)
+		log.Printf("[parsers.releases] Error updating release check time for lib %s: %s", id, err)
 	}
 
 	isApp := false
@@ -97,11 +97,11 @@ func (rp releaseParser) parse(data []byte) {
 
 	lib.IsApp = true
 	if err := rp.save(lib); err != nil {
-		log.Printf("[parsers.releases] Error saving lib: %s", err)
+		log.Printf("[parsers.releases] Error saving lib %s: %s", id, err)
 		return
 	}
 
 	if err := rp.publish("taxonomize", []byte(id)); err != nil {
-		log.Printf("[parsers.releases] Error publishing taxonomize: %s", err)
+		log.Printf("[parsers.releases] Error publishing taxonomize for lib %s: %s", id, err)
 	}
 }

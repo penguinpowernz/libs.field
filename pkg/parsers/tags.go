@@ -67,7 +67,7 @@ func (tp tagParser) parse(data []byte) {
 
 	lib.TagsCheckedAt = time.Now()
 	if err := tp.saveFields([]string{"TagsCheckedAt"}, lib); err != nil {
-		log.Printf("[parsers.tags] Error updating tag check time: %s", err)
+		log.Printf("[parsers.tags] Error updating tag check time for lib %s: %s", id, err)
 	}
 
 	if lib.CurrentTag != tags[0].Name {
@@ -84,7 +84,7 @@ func (tp tagParser) parse(data []byte) {
 	}
 
 	if err := tp.save(lib); err != nil {
-		log.Printf("[parsers.tags] Error updating lib: %s", err)
+		log.Printf("[parsers.tags] Error updating lib %s: %s", id, err)
 		return
 	}
 }
