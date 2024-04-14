@@ -8,18 +8,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
 )
 
+var defaultInterval = 5 * time.Second
+
 type Scraper struct {
-	nc    *nats.Conn
-	next  <-chan time.Time
-	queue []string
-	cl    *http.Client
-	qmu   *sync.Mutex
+	nc   *nats.Conn
+	next <-chan time.Time
+	cl   *http.Client
 }
 
 func New(nc *nats.Conn) *Scraper {
@@ -32,12 +31,11 @@ func New(nc *nats.Conn) *Scraper {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
 		},
-		qmu: &sync.Mutex{},
 	}
 }
 
 func (s *Scraper) Run(ctx context.Context) error {
-	in := make(chan *nats.Msg)
+	in := make(chan *nats.Msg, 100)
 	sub, err := s.nc.QueueSubscribeSyncWithChan("urls", "scraper", in)
 	if err != nil {
 		return err
@@ -50,88 +48,75 @@ func (s *Scraper) Run(ctx context.Context) error {
 			return nil
 
 		case msg := <-in:
-			s.qmu.Lock()
-			s.queue = append(s.queue, string(msg.Data))
-			s.qmu.Unlock()
-
-		case <-s.next:
-			dur := s.request()
+			<-s.next
+			dur := s.request(string(msg.Data))
 			s.next = time.After(dur)
 
 		}
 	}
 }
 
-func (s *Scraper) request() time.Duration {
-	s.qmu.Lock()
-	defer s.qmu.Unlock()
-
-	if len(s.queue) == 0 {
-		return time.Second
-	}
-
-	url := s.queue[0]
-	if len(s.queue) > 1 {
-		s.queue = s.queue[1:]
-	}
-	s.queue = []string{}
-
-	log.Printf("Scraper: requesting url %s", url)
+func (s *Scraper) request(url string) time.Duration {
+	log.Printf("requesting url %s", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Printf("Scraper: error creating request for url %s: %s", url, err)
-		s.queue = append(s.queue, url) // put the url back in the queue
-		return time.Second
+		log.Printf("error creating request for url %s: %s", url, err)
+		// s.queue = append(s.queue, url) // put the url back in the queue
+		return defaultInterval
 	}
 
 	res, err := s.cl.Do(req)
 	if err != nil {
-		log.Printf("Scraper: error making request for url %s: %s", url, err)
-		s.queue = append(s.queue, url) // put the url back in the queue
-		return time.Second
+		log.Printf("error making request for url %s: %s", url, err)
+		// s.queue = append(s.queue, url) // put the url back in the queue
+		return defaultInterval
 	}
 
 	defer res.Body.Close()
 	switch res.StatusCode {
 	case 200:
-		log.Printf("Scraper: got 200 for url %s", url)
+		log.Printf("got 200 for url %s", url)
 
 		data, err := io.ReadAll(res.Body)
 		if err != nil {
-			log.Printf("Scraper: error reading response body for url %s: %s", url, err)
-			s.queue = append(s.queue, url) // put the url back in the queue
-			return time.Second
+			log.Printf("error reading response body for url %s: %s", url, err)
+			// s.queue = append(s.queue, url) // put the url back in the queue
+			return defaultInterval
 		}
 
 		if err := s.nc.Publish(subjFromURL(url), data); err != nil {
-			log.Printf("Scraper: error publishing response for url %s: %s", url, err)
-			s.queue = append(s.queue, url) // put the url back in the queue
-			return time.Second
+			log.Printf("error publishing response for url %s: %s", url, err)
+			// s.queue = append(s.queue, url) // put the url back in the queue
+			return defaultInterval
 		}
 
+		log.Printf("published %s response for url %s", subjFromURL(url), url)
+
 	case 404:
-		log.Printf("Scraper: got 404 for url %s", url)
-		return time.Second
+		log.Printf("got 404 for url %s", url)
+		return defaultInterval
 
 	case 403, 429:
-		log.Printf("Scraper: got %d for url %s", res.StatusCode, url)
-		s.queue = append(s.queue, url) // put the url back in the queue
+		log.Printf("got %d for url %s", res.StatusCode, url)
+		// s.queue = append(s.queue, url) // put the url back in the queue
 
 		if res.Header.Get("x-ratelimit-remaining") == "0" {
 			epochS := res.Header.Get("x-ratelimit-reset")
 			epoch, err := strconv.Atoi(epochS)
 			if err != nil {
-				log.Printf("Scraper: error parsing x-ratelimit-reset header for url %s: %s", url, err)
+				log.Printf("error parsing x-ratelimit-reset header for url %s: %s", url, err)
 				return time.Minute
 			}
 
+			log.Println("ratelimit reset in", time.Until(time.Unix(int64(epoch), 0)))
 			return time.Until(time.Unix(int64(epoch), 0))
 		}
 
+		log.Println("couldn't determine ratelimit, sleeping for a minute")
 		return time.Minute
 	}
 
-	return time.Second
+	return defaultInterval
 }
 
 func subjFromURL(url string) string {
@@ -149,12 +134,14 @@ func subjFromURL(url string) string {
 		return "releases"
 	case "commits":
 		return "commits"
+	case "contributors":
+		return "contributors"
 	}
 
 	if len(parts) == 6 {
 		return "repos"
 	}
 
-	log.Printf("Scraper: unknown url %s", url)
+	log.Printf("unknown url %s", url)
 	return "unknown"
 }
