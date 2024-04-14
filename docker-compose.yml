@@ -14,6 +14,7 @@ services:
     image: debian:latest
     volumes:
       - ./bin/api:/bin/api
+      - ./htdocs:/var/www/html
     command: /bin/api
     ports:
       - "4080:80"
@@ -48,6 +49,8 @@ services:
 
   nats:
     image: nats:latest
+    volumes:
+      - "./nats-server.conf:/nats-server.conf"
     ports:
       - "4222:4222"
     expose:
@@ -55,6 +58,9 @@ services:
 
   redis:
     image: redis:latest
+    # command: ["redis-server", "--save" , "60", "1", "--loglevel", "warning"]
+    # volumes:
+    #   - "./db:/data"
     ports:
       - 6379
     expose:
