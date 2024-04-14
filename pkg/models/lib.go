@@ -3,23 +3,24 @@ package models
 import "time"
 
 type Lib struct {
-	Name                  string    `json:"name"`
-	FullName              string    `json:"full_name"`
-	CurrentTag            string    `json:"current_tag"`
-	TaggedAt              string    `json:"tagged_at"`
-	ReleaseTag            string    `json:"release_tag"`
-	ReleasedAt            string    `json:"released_at"`
-	PushedAt              string    `json:"pushed_at"`
-	Stargazers            int       `json:"stargazers"`
-	PushesPerday          int       `json:"pushes_per_day"`
-	StargazersChange      int       `json:"stargazers_change"`
-	OpenIssuesCount       int       `json:"open_issues_count"`
-	URL                   string    `json:"url"`
-	Language              string    `json:"language"`
-	License               string    `json:"license"`
-	APIURL                string    `json:"api_url"`
-	IsApp                 bool      `json:"is_app"`
+	Name                    string    `json:"name" redis:"Name"`
+	FullName                string    `json:"full_name" redis:"FullName"`
+	CurrentTag              string    `json:"current_tag" redis:"CurrentTag"`
+	TaggedAt                string    `json:"tagged_at" redis:"TaggedAt" zoom:"index"`
+	ReleaseTag              string    `json:"release_tag" redis:"ReleaseTag"`
+	ReleasedAt              string    `json:"released_at" redis:"ReleasedAt" zoom:"index"`
+	Description             string    `json:"description" redis:"Description"`
+	PushedAt                string    `json:"pushed_at" redis:"PushedAt" zoom:"index"`
 	UpdatedAt               string    `json:"updated_at" redis:"UpdatedAt" zoom:"index"`
+	Stargazers              int       `json:"stargazers" redis:"Stargazers" zoom:"index"`
+	PushesPerday            int       `json:"pushes_per_day" redis:"PushesPerday" zoom:"index"`
+	StargazersChange        int       `json:"stargazers_change" redis:"StargazersChange" zoom:"index"`
+	OpenIssuesCount         int       `json:"open_issues_count" redis:"OpenIssuesCount"`
+	URL                     string    `json:"url" redis:"URL"`
+	Language                string    `json:"language" redis:"Language"`
+	License                 string    `json:"license" redis:"License"`
+	APIURL                  string    `json:"api_url" redis:"APIURL"`
+	IsApp                   bool      `json:"is_app" redis:"IsApp"`
 	UpdatedTime             time.Time `json:"updated_time" redis:"UpdatedTime"`
 	ReleasesCheckedTime     time.Time `json:"releases_checked_time" redis:"ReleasesCheckedTime"`
 	TagsCheckedTime         time.Time `json:"tags_checked_time" redis:"TagsCheckedTime"`
@@ -35,13 +36,14 @@ func (lib *Lib) SetModelID(id string) {
 	lib.FullName = id
 }
 
-func NewLibFromRepo(repo GitHubRepo) Lib {
-	return Lib{
+func NewLibFromRepo(repo GitHubRepo) *Lib {
+	return &Lib{
 		PushedAt:         repo.PushedAt,
 		Stargazers:       repo.StargazersCount,
 		PushesPerday:     0,
 		StargazersChange: 0,
 		OpenIssuesCount:  repo.OpenIssuesCount,
+		Description:      repo.Description,
 		URL:              repo.HTMLURL,
 		License:          repo.License.SpdxID,
 		Language:         repo.Language,
@@ -58,6 +60,7 @@ func (lib *Lib) UpdateFromRepo(repo GitHubRepo) {
 	lib.StargazersChange = repo.StargazersCount - lib.Stargazers
 	lib.Stargazers = repo.StargazersCount
 	lib.OpenIssuesCount = repo.OpenIssuesCount
+	lib.Description = repo.Description
 	lib.License = repo.License.SpdxID
 	lib.UpdatedTime = time.Now()
 	lib.UpdatedAt = time.Now().Format(time.RFC3339)

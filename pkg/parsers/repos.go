@@ -15,6 +15,7 @@ import (
 
 func Repos(ctx context.Context, nc *nats.Conn, libs *zoom.Collection) error {
 	sub, err := nc.QueueSubscribe("repos", "parsers", func(m *nats.Msg) {
+		log.Printf("[parsers.repos] got message")
 		rp := &repoParser{
 			find:    libs.Find,
 			save:    libs.Save,
@@ -69,7 +70,7 @@ func (rp *repoParser) parse(data []byte) {
 	rp.update()
 }
 
-func (rp repoParser) delegate() {
+func (rp *repoParser) delegate() {
 	// update tags every day
 	if int(time.Since(rp.lib.TagsCheckedTime).Hours()) > 24 {
 		rp.publish("urls", []byte(rp.repo.TagsURL))
@@ -94,9 +95,9 @@ func (rp repoParser) delegate() {
 	rp.publish("taxonomize", []byte(rp.repo.FullName+" "+strings.Join(rp.repo.Topics, ",")))
 }
 
-func (rp repoParser) create() {
-	lib := models.NewLibFromRepo(rp.repo)
-	if err := rp.save(&lib); err != nil {
+func (rp *repoParser) create() {
+	rp.lib = models.NewLibFromRepo(rp.repo)
+	if err := rp.save(rp.lib); err != nil {
 		log.Printf("[parsers.repos] Error saving lib: %s (repo: %s)", err, rp.repo.FullName)
 		return
 	}
@@ -104,16 +105,16 @@ func (rp repoParser) create() {
 	rp.delegate()
 }
 
-func (rp repoParser) update() {
-	var lib *models.Lib
-	if err := rp.find(rp.repo.FullName, lib); err != nil {
+func (rp *repoParser) update() {
+	rp.lib = new(models.Lib)
+	if err := rp.find(rp.repo.FullName, rp.lib); err != nil {
 		log.Printf("[parsers.repos] Error finding lib: %s (repo: %s)", err, rp.repo.FullName)
 		return
 	}
 
-	lib.UpdateFromRepo(rp.repo)
+	rp.lib.UpdateFromRepo(rp.repo)
 
-	if err := rp.save(lib); err != nil {
+	if err := rp.save(rp.lib); err != nil {
 		log.Printf("[parsers.repos] Error updating lib: %s (repo: %s)", err, rp.repo.FullName)
 		return
 	}
