@@ -10,10 +10,14 @@ import (
 	"github.com/penguinpowernz/libs.fieid/pkg/models"
 )
 
-func New(nc *nats.Conn, libs *zoom.Collection) *Taxonomizer {
+func New(nc *nats.Conn, libs, cats, libcats, topics, libtopics *zoom.Collection) *Taxonomizer {
 	t := &Taxonomizer{
-		nc:   nc,
-		libs: libs,
+		nc:            nc,
+		libs:          libs,
+		categories:    cats,
+		libCategories: libcats,
+		topics:        topics,
+		libTopics:     libtopics,
 	}
 
 	return t

@@ -30,9 +30,31 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tmzr := taxon.New(nc, libs)
+	cats, err := pool.NewCollectionWithOptions(&models.Category{}, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	libcats, err := pool.NewCollectionWithOptions(&models.LibCategory{}, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	topics, err := pool.NewCollectionWithOptions(&models.Topic{}, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	libtopics, err := pool.NewCollectionWithOptions(&models.LibTopic{}, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmzr := taxon.New(nc, libs, cats, libcats, topics, libtopics)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	tmzr.SetupDefaults(ctx)
 	tmzr.Run(ctx)
 }

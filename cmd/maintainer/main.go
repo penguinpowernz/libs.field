@@ -38,7 +38,7 @@ func main() {
 		}
 
 		for _, lib := range allLibs {
-			lag := time.Since(lib.UpdatedAt).Seconds()
+			lag := time.Since(lib.UpdatedTime).Seconds()
 			if lag > float64(86400) {
 				nc.Publish("urls", []byte(lib.APIURL))
 			}
