@@ -7,6 +7,7 @@ import (
 	"github.com/albrow/zoom"
 	"github.com/nats-io/nats.go"
 	"github.com/penguinpowernz/libs.fieid/pkg/models"
+	"github.com/penguinpowernz/libs.fieid/pkg/util"
 )
 
 func main() {
@@ -20,7 +21,8 @@ func main() {
 	defer pool.Close()
 
 	libs, err := pool.NewCollectionWithOptions(&models.Lib{}, zoom.CollectionOptions{
-		Index: true,
+		FallbackMarshalerUnmarshaler: util.FallbackMarshaler{},
+		Index:                        true,
 	})
 
 	if err != nil {

@@ -19,11 +19,12 @@ type Lib struct {
 	License               string    `json:"license"`
 	APIURL                string    `json:"api_url"`
 	IsApp                 bool      `json:"is_app"`
-	UpdatedAt             time.Time `json:"updated_at"`
-	ReleasesCheckedAt     time.Time `json:"releases_checked_at"`
-	TagsCheckedAt         time.Time `json:"tags_checked_at"`
-	ContributorsCheckedAt time.Time `json:"contributors_checked_at"`
-	CommitsCheckedAt      time.Time `json:"commits_checked_at"`
+	UpdatedAt               string    `json:"updated_at" redis:"UpdatedAt" zoom:"index"`
+	UpdatedTime             time.Time `json:"updated_time" redis:"UpdatedTime"`
+	ReleasesCheckedTime     time.Time `json:"releases_checked_time" redis:"ReleasesCheckedTime"`
+	TagsCheckedTime         time.Time `json:"tags_checked_time" redis:"TagsCheckedTime"`
+	ContributorsCheckedTime time.Time `json:"contributors_checked_time" redis:"ContributorsCheckedTime"`
+	CommitsCheckedTime      time.Time `json:"commits_checked_time" redis:"CommitsCheckedTime"`
 }
 
 func (lib *Lib) ModelID() string {
@@ -46,7 +47,8 @@ func NewLibFromRepo(repo GitHubRepo) Lib {
 		Language:         repo.Language,
 		Name:             repo.Name,
 		FullName:         repo.FullName,
-		UpdatedAt:        time.Now(),
+		UpdatedAt:        time.Now().Format(time.RFC3339),
+		UpdatedTime:      time.Now(),
 		APIURL:           repo.URL,
 	}
 }
@@ -57,7 +59,8 @@ func (lib *Lib) UpdateFromRepo(repo GitHubRepo) {
 	lib.Stargazers = repo.StargazersCount
 	lib.OpenIssuesCount = repo.OpenIssuesCount
 	lib.License = repo.License.SpdxID
-	lib.UpdatedAt = time.Now()
+	lib.UpdatedTime = time.Now()
+	lib.UpdatedAt = time.Now().Format(time.RFC3339)
 	lib.Name = repo.Name
 	lib.FullName = repo.FullName
 }

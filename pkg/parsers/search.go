@@ -11,6 +11,7 @@ import (
 
 func Search(ctx context.Context, nc *nats.Conn, _ *zoom.Collection) error {
 	sub, err := nc.QueueSubscribe("search", "parsers", func(m *nats.Msg) {
+		log.Printf("[parsers.search] got message")
 		err := parseSearch(m.Data, func(data []byte) {
 			// call this for each repo item found in the search results
 			if err := nc.Publish("repos", data); err != nil {

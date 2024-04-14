@@ -71,22 +71,22 @@ func (rp *repoParser) parse(data []byte) {
 
 func (rp repoParser) delegate() {
 	// update tags every day
-	if int(time.Since(rp.lib.TagsCheckedAt).Hours()) > 24 {
+	if int(time.Since(rp.lib.TagsCheckedTime).Hours()) > 24 {
 		rp.publish("urls", []byte(rp.repo.TagsURL))
 	}
 
 	// update contributors every 2-5 days
-	if int(time.Since(rp.lib.ContributorsCheckedAt).Hours()) > 24*(rand.Intn(5)+2) {
+	if int(time.Since(rp.lib.ContributorsCheckedTime).Hours()) > 24*(rand.Intn(5)+2) {
 		rp.publish("urls", []byte(rp.repo.ContributorsURL))
 	}
 
 	// check if its an app every 2-5 days
-	if int(time.Since(rp.lib.ReleasesCheckedAt).Hours()) > 24*(rand.Intn(5)+2) {
+	if int(time.Since(rp.lib.ReleasesCheckedTime).Hours()) > 24*(rand.Intn(5)+2) {
 		rp.publish("urls", []byte(strings.Split(rp.repo.ReleasesURL, "{")[0]))
 	}
 
 	// check the commits per day every day
-	if int(time.Since(rp.lib.CommitsCheckedAt).Hours()) > 24 {
+	if int(time.Since(rp.lib.CommitsCheckedTime).Hours()) > 24 {
 		rp.publish("urls", []byte(strings.Split(rp.repo.CommitsURL, "{")[0]))
 	}
 

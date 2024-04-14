@@ -18,6 +18,7 @@ var binaryWordsRE = regexp.MustCompile(`[Ff]ree[Bb][Ss][Dd]|[Ll]inux|[Dd]arwin|\
 // Releases will scan the releases endpoint for indications that this lib is a downloadable runnable application
 func Releases(ctx context.Context, nc *nats.Conn, libs *zoom.Collection) error {
 	sub, err := nc.QueueSubscribe("releases", "parsers", func(m *nats.Msg) {
+		log.Printf("[parsers.releases] got message")
 		releaseParser{
 			find:       libs.Find,
 			save:       libs.Save,
@@ -76,8 +77,8 @@ func (rp releaseParser) parse(data []byte) {
 		lib.ReleasedAt = releases[0].PublishedAt
 	}
 
-	lib.ReleasesCheckedAt = time.Now()
-	if err := rp.saveFields([]string{"ReleasesCheckedAt"}, lib); err != nil {
+	lib.ReleasesCheckedTime = time.Now()
+	if err := rp.saveFields([]string{"ReleasesCheckedTime"}, lib); err != nil {
 		log.Printf("[parsers.releases] Error updating release check time for lib %s: %s", id, err)
 	}
 

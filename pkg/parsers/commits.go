@@ -14,6 +14,7 @@ import (
 
 func Commits(ctx context.Context, nc *nats.Conn, libs *zoom.Collection) error {
 	sub, err := nc.QueueSubscribe("commits", "parsers", func(m *nats.Msg) {
+		log.Printf("[parsers.commits] got message")
 		commitsParser{
 			find:       libs.Find,
 			save:       libs.Save,
@@ -65,8 +66,8 @@ func (cp commitsParser) parse(data []byte) {
 		return
 	}
 
-	lib.CommitsCheckedAt = time.Now()
-	if err := cp.saveFields([]string{"CommitsCheckedAt"}, lib); err != nil {
+	lib.CommitsCheckedTime = time.Now()
+	if err := cp.saveFields([]string{"CommitsCheckedTime"}, lib); err != nil {
 		log.Printf("[parsers.commits] Error updating commit check time for lib %s: %s", id, err)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/penguinpowernz/libs.fieid/pkg/models"
 	"github.com/penguinpowernz/libs.fieid/pkg/taxon"
+	"github.com/penguinpowernz/libs.fieid/pkg/util"
 )
 
 func main() {
@@ -20,9 +21,14 @@ func main() {
 	pool := zoom.NewPool("redis:6379")
 	defer pool.Close()
 
-	libs, err := pool.NewCollectionWithOptions(&models.Lib{}, zoom.CollectionOptions{
-		Index: true,
-	})
+	opts := zoom.CollectionOptions{
+		FallbackMarshalerUnmarshaler: util.FallbackMarshaler{},
+		Index:                        true,
+	}
+	libs, err := pool.NewCollectionWithOptions(&models.Lib{}, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	tmzr := taxon.New(nc, libs)
 

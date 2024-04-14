@@ -14,6 +14,7 @@ import (
 
 func Tags(ctx context.Context, nc *nats.Conn, libs *zoom.Collection) error {
 	sub, err := nc.QueueSubscribe("tags", "parsers", func(m *nats.Msg) {
+		log.Printf("[parsers.tags] got message")
 		tagParser{
 			find:       libs.Find,
 			save:       libs.Save,
@@ -65,8 +66,8 @@ func (tp tagParser) parse(data []byte) {
 		return
 	}
 
-	lib.TagsCheckedAt = time.Now()
-	if err := tp.saveFields([]string{"TagsCheckedAt"}, lib); err != nil {
+	lib.TagsCheckedTime = time.Now()
+	if err := tp.saveFields([]string{"TagsCheckedTime"}, lib); err != nil {
 		log.Printf("[parsers.tags] Error updating tag check time for lib %s: %s", id, err)
 	}
 
