@@ -21,6 +21,7 @@ func NewServer(libs, cats, libcats *zoom.Collection) *Server {
 
 func (svr *Server) SetupRoutes(r gin.IRouter) {
 
+	r.GET("/", paginate, svr.index)
 
 	api := r.Group("/v1")
 	api.GET("/topics")
